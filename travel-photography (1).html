@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WANDERLENS — Travel Photography</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand: #d9c8a9;
+    --dark: #0f0e0b;
+    --ink: #1a1814;
+    --cream: #f2ece0;
+    --rust: #b5471b;
+    --gold: #c9a84c;
+    --fog: #8c8070;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── CURSOR ── */
+  * { cursor: none; }
+  #cursor {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--rust);
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    mix-blend-mode: difference;
+    transition: transform 0.15s ease, width 0.2s, height 0.2s;
+  }
+  #cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid var(--sand);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    transition: transform 0.35s cubic-bezier(0.23,1,0.32,1), opacity 0.3s;
+    opacity: 0.5;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 60px;
+    mix-blend-mode: normal;
+  }
+  nav::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(15,14,11,0.85) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.2em;
+    color: var(--cream);
+    text-decoration: none;
+    position: relative; z-index: 1;
+  }
+  .nav-logo span { color: var(--rust); }
+  .nav-links {
+    display: flex; gap: 40px;
+    list-style: none;
+    position: relative; z-index: 1;
+  }
+  .nav-links a {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sand);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--cream); }
+
+  /* ── HERO ── */
+  .hero {
+    height: 100vh; position: relative;
+    display: flex; align-items: flex-end;
+    padding: 0 60px 80px;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(160deg, rgba(15,14,11,0.2) 0%, rgba(15,14,11,0.75) 100%),
+      url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1800&auto=format&fit=crop') center/cover no-repeat;
+    transform-origin: center;
+    animation: slowZoom 18s ease-in-out infinite alternate;
+  }
+  @keyframes slowZoom {
+    from { transform: scale(1); }
+    to   { transform: scale(1.06); }
+  }
+  .hero-noise {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+    pointer-events: none; opacity: 0.4;
+  }
+  .hero-content { position: relative; z-index: 2; max-width: 720px; }
+  .hero-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 1s 0.3s forwards;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4.5rem, 11vw, 10rem);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    color: var(--cream);
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeUp 1s 0.5s forwards;
+  }
+  .hero-title em {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--sand);
+  }
+  .hero-sub {
+    font-size: 1rem;
+    color: var(--fog);
+    max-width: 420px;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 1s 0.7s forwards;
+    margin-bottom: 44px;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-decoration: none;
+    opacity: 0;
+    animation: fadeUp 1s 0.9s forwards;
+  }
+  .hero-cta .line {
+    width: 48px; height: 1px;
+    background: var(--rust);
+    transition: width 0.4s;
+  }
+  .hero-cta:hover .line { width: 80px; }
+  .scroll-indicator {
+    position: absolute; right: 60px; bottom: 80px;
+    z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    font-size: 0.6rem; letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--fog);
+    opacity: 0;
+    animation: fadeIn 1s 1.3s forwards;
+  }
+  .scroll-line {
+    width: 1px; height: 50px;
+    background: linear-gradient(to bottom, var(--rust), transparent);
+    animation: scrollPulse 2s 1.5s infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { transform: scaleY(1); opacity: 1; }
+    50%       { transform: scaleY(0.5); opacity: 0.4; }
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ── SECTION BASE ── */
+  section { padding: 120px 60px; }
+
+  /* ── STATS BAR ── */
+  .stats {
+    background: var(--dark);
+    padding: 60px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid rgba(217,200,169,0.1);
+    border-bottom: 1px solid rgba(217,200,169,0.1);
+  }
+  .stat {
+    text-align: center;
+    padding: 0 20px;
+    border-right: 1px solid rgba(217,200,169,0.12);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    color: var(--cream);
+    display: block;
+    line-height: 1;
+  }
+  .stat-number span { color: var(--rust); }
+  .stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fog);
+    margin-top: 8px;
+    display: block;
+  }
+
+  /* ── GALLERY GRID ── */
+  .gallery-section { padding: 120px 60px; }
+  .gallery-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 70px;
+  }
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--cream);
+  }
+  .section-title em { font-style: italic; color: var(--gold); }
+  .view-all {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sand);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 12px;
+    transition: color 0.3s;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+  }
+  .view-all::after {
+    content: '→';
+    transition: transform 0.3s;
+  }
+  .view-all:hover { color: var(--cream); }
+  .view-all:hover::after { transform: translateX(6px); }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-rows: 340px 240px;
+    gap: 4px;
+  }
+  .gallery-item {
+    position: relative; overflow: hidden;
+    background: var(--dark);
+  }
+  .gallery-item:first-child { grid-row: 1 / 3; }
+  .gallery-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.7s cubic-bezier(0.23,1,0.32,1), filter 0.5s;
+    filter: brightness(0.9) saturate(0.85);
+  }
+  .gallery-item:hover img {
+    transform: scale(1.06);
+    filter: brightness(1) saturate(1);
+  }
+  .gallery-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(15,14,11,0.8) 0%, transparent 55%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    display: flex; align-items: flex-end; padding: 28px;
+  }
+  .gallery-item:hover .gallery-overlay { opacity: 1; }
+  .gallery-caption { color: var(--cream); }
+  .gallery-caption-loc {
+    font-size: 0.6rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .gallery-caption-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 300;
+  }
+
+  /* ── FEATURED STORY ── */
+  .story-section {
+    background: var(--dark);
+    padding: 120px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .story-image {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+  }
+  .story-image img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: saturate(0.8);
+  }
+  .story-image::before {
+    content: '';
+    position: absolute;
+    top: -20px; left: -20px;
+    right: 20px; bottom: 20px;
+    border: 1px solid rgba(201,168,76,0.25);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .story-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 8rem;
+    color: rgba(217,200,169,0.06);
+    line-height: 1;
+    margin-bottom: -30px;
+  }
+  .story-content .section-label { margin-bottom: 20px; }
+  .story-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--cream);
+    margin-bottom: 28px;
+  }
+  .story-title em { font-style: italic; color: var(--gold); }
+  .story-body {
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--fog);
+    margin-bottom: 40px;
+  }
+  .story-meta {
+    display: flex; gap: 40px; margin-bottom: 40px;
+  }
+  .story-meta-item {}
+  .story-meta-key {
+    font-size: 0.6rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--fog);
+    margin-bottom: 4px;
+  }
+  .story-meta-val {
+    font-size: 0.85rem; color: var(--sand);
+  }
+  .btn-read {
+    display: inline-flex; align-items: center; gap: 16px;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--sand);
+    padding: 16px 32px;
+    text-decoration: none;
+    transition: background 0.3s, color 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-read::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+  }
+  .btn-read:hover::before { transform: translateX(0); }
+  .btn-read span { position: relative; z-index: 1; }
+  .btn-read:hover { color: var(--cream); }
+
+  /* ── DESTINATIONS ── */
+  .destinations-section { padding: 120px 60px; }
+  .dest-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 70px;
+  }
+  .dest-card {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    background: var(--dark);
+  }
+  .dest-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s cubic-bezier(0.23,1,0.32,1);
+    filter: brightness(0.75) saturate(0.7);
+  }
+  .dest-card:hover img { transform: scale(1.08); filter: brightness(0.9) saturate(0.9); }
+  .dest-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 40px 32px 32px;
+    background: linear-gradient(to top, rgba(15,14,11,0.92) 0%, transparent 100%);
+    transform: translateY(20px);
+    transition: transform 0.4s;
+  }
+  .dest-card:hover .dest-info { transform: translateY(0); }
+  .dest-region {
+    font-size: 0.6rem; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .dest-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 0.05em;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .dest-count {
+    font-size: 0.72rem; color: var(--fog);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;
+  }
+  .dest-card:hover .dest-count { opacity: 1; transform: translateY(0); }
+
+  /* ── QUOTE ── */
+  .quote-section {
+    background: var(--rust);
+    padding: 100px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .quote-section::before {
+    content: '"';
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28rem;
+    color: rgba(255,255,255,0.04);
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    line-height: 1;
+    pointer-events: none;
+  }
+  .quote-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 4vw, 3.2rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--cream);
+    max-width: 900px;
+    margin: 0 auto 32px;
+    line-height: 1.35;
+    position: relative; z-index: 1;
+  }
+  .quote-author {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(242,236,224,0.6);
+    position: relative; z-index: 1;
+  }
+
+  /* ── NEWSLETTER ── */
+  .newsletter {
+    padding: 120px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    border-top: 1px solid rgba(217,200,169,0.08);
+  }
+  .newsletter-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--cream);
+  }
+  .newsletter-title em { font-style: italic; color: var(--gold); }
+  .newsletter-body {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--fog);
+    margin-top: 20px;
+  }
+  .newsletter-form {
+    display: flex; gap: 0;
+  }
+  .newsletter-input {
+    flex: 1;
+    background: rgba(217,200,169,0.07);
+    border: 1px solid rgba(217,200,169,0.2);
+    border-right: none;
+    padding: 18px 24px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .newsletter-input::placeholder { color: var(--fog); }
+  .newsletter-input:focus { border-color: rgba(217,200,169,0.5); }
+  .newsletter-btn {
+    background: var(--rust);
+    border: none;
+    padding: 18px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cream);
+    transition: background 0.3s;
+  }
+  .newsletter-btn:hover { background: var(--gold); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--dark);
+    padding: 60px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    border-top: 1px solid rgba(217,200,169,0.08);
+  }
+  .footer-brand { }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.2em;
+    color: var(--cream);
+    margin-bottom: 16px;
+  }
+  .footer-logo span { color: var(--rust); }
+  .footer-desc {
+    font-size: 0.82rem;
+    color: var(--fog);
+    line-height: 1.75;
+    max-width: 300px;
+  }
+  .footer-col-title {
+    font-size: 0.62rem; letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--sand);
+    margin-bottom: 24px;
+  }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .footer-links a {
+    font-size: 0.82rem;
+    color: var(--fog);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-links a:hover { color: var(--cream); }
+  .footer-bottom {
+    padding: 24px 60px;
+    background: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(217,200,169,0.06);
+    font-size: 0.72rem;
+    color: var(--fog);
+    letter-spacing: 0.08em;
+  }
+  .footer-bottom a { color: var(--fog); text-decoration: none; }
+
+  /* ── REVEAL ANIMATION ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s cubic-bezier(0.23,1,0.32,1), transform 0.9s cubic-bezier(0.23,1,0.32,1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.22s; }
+  .reveal-delay-3 { transition-delay: 0.34s; }
+
+  @media (max-width: 900px) {
+    nav { padding: 24px 28px; }
+    .nav-links { display: none; }
+    section, .gallery-section, .destinations-section, .newsletter, .story-section { padding: 80px 28px; }
+    .hero { padding: 0 28px 60px; }
+    .stats { grid-template-columns: 1fr 1fr; padding: 40px 28px; }
+    .stat { border-right: none; border-bottom: 1px solid rgba(217,200,169,0.1); padding: 24px 0; }
+    .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+    .gallery-item:first-child { grid-row: auto; }
+    .story-section { grid-template-columns: 1fr; }
+    .dest-grid { grid-template-columns: 1fr; }
+    .newsletter { grid-template-columns: 1fr; gap: 40px; }
+    footer { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-bottom { flex-direction: column; gap: 12px; padding: 20px 28px; }
+    .quote-section { padding: 80px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#"><span>WANDER</span>LENS</a>
+  <ul class="nav-links">
+    <li><a href="#galeria">Galeria</a></li>
+    <li><a href="#historia">Historie</a></li>
+    <li><a href="#destynacje">Destynacje</a></li>
+    <li><a href="#kontakt">Kontakt</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-noise"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Fotografia podróżnicza</p>
+    <h1 class="hero-title">THE WORLD<br>IS <em>Yours</em></h1>
+    <p class="hero-sub">Każde zdjęcie to historia zatrzymana w czasie — milion mil, jeden kadr, nieskończona opowieść.</p>
+    <a href="#galeria" class="hero-cta">
+      <div class="line"></div>
+      Odkryj kolekcję
+    </a>
+  </div>
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    Przewiń
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat reveal">
+    <span class="stat-number">84<span>+</span></span>
+    <span class="stat-label">Krajów</span>
+  </div>
+  <div class="stat reveal reveal-delay-1">
+    <span class="stat-number">12<span>K</span></span>
+    <span class="stat-label">Zdjęć w archiwum</span>
+  </div>
+  <div class="stat reveal reveal-delay-2">
+    <span class="stat-number">6<span>+</span></span>
+    <span class="stat-label">Lat w podróży</span>
+  </div>
+  <div class="stat reveal reveal-delay-3">
+    <span class="stat-number">230<span>K</span></span>
+    <span class="stat-label">Obserwujących</span>
+  </div>
+</div>
+
+<!-- Gallery -->
+<section class="gallery-section" id="galeria">
+  <div class="gallery-header reveal">
+    <div>
+      <p class="section-label">Najnowsze prace</p>
+      <h2 class="section-title">Świat przez<br><em>obiektyw</em></h2>
+    </div>
+    <a href="#" class="view-all">Zobacz wszystkie</a>
+  </div>
+  <div class="gallery-grid">
+    <div class="gallery-item reveal">
+      <img src="https://images.unsplash.com/photo-1530695440407-21fef47230b1?w=900&auto=format&fit=crop" alt="Japonia">
+      <div class="gallery-overlay">
+        <div class="gallery-caption">
+          <div class="gallery-caption-loc">Azja — Japonia</div>
+          <div class="gallery-caption-title">Mgła nad świątynią</div>
+        </div>
+      </div>
+    </div>
+    <div class="gallery-item reveal reveal-delay-1">
+      <img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=700&auto=format&fit=crop" alt="Góry">
+      <div class="gallery-overlay">
+        <div class="gallery-caption">
+          <div class="gallery-caption-loc">Europa — Alpy</div>
+          <div class="gallery-caption-title">Poranek w górach</div>
+        </div>
+      </div>
+    </div>
+    <div class="gallery-item reveal reveal-delay-2">
+      <img src="https://images.unsplash.com/photo-1504700610630-ac6aba3536d3?w=700&auto=format&fit=crop" alt="Sahara">
+      <div class="gallery-overlay">
+        <div class="gallery-caption">
+          <div class="gallery-caption-loc">Afryka — Sahara</div>
+          <div class="gallery-caption-title">Złote wydmy</div>
+        </div>
+      </div>
+    </div>
+    <div class="gallery-item reveal reveal-delay-1">
+      <img src="https://images.unsplash.com/photo-1520483601560-389dff434fdf?w=700&auto=format&fit=crop" alt="Islandia">
+      <div class="gallery-overlay">
+        <div class="gallery-caption">
+          <div class="gallery-caption-loc">Europa — Islandia</div>
+          <div class="gallery-caption-title">Wodospady północy</div>
+        </div>
+      </div>
+    </div>
+    <div class="gallery-item reveal reveal-delay-2">
+      <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=700&auto=format&fit=crop" alt="Tajlandia">
+      <div class="gallery-overlay">
+        <div class="gallery-caption">
+          <div class="gallery-caption-loc">Azja — Tajlandia</div>
+          <div class="gallery-caption-title">Wschód słońca</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Story -->
+<div class="story-section" id="historia">
+  <div class="story-image reveal">
+    <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop" alt="Mongolia">
+  </div>
+  <div class="story-content">
+    <div class="story-number">01</div>
+    <p class="section-label">Wyróżniona historia</p>
+    <h2 class="story-title reveal">Mongolia —<br><em>Kraj wiecznego nieba</em></h2>
+    <div class="story-meta reveal reveal-delay-1">
+      <div class="story-meta-item">
+        <div class="story-meta-key">Lokalizacja</div>
+        <div class="story-meta-val">Ułan Bator, Mongolia</div>
+      </div>
+      <div class="story-meta-item">
+        <div class="story-meta-key">Data</div>
+        <div class="story-meta-val">Sierpień 2025</div>
+      </div>
+      <div class="story-meta-item">
+        <div class="story-meta-key">Czas podróży</div>
+        <div class="story-meta-val">28 dni</div>
+      </div>
+    </div>
+    <p class="story-body reveal reveal-delay-2">Mongolski step rozciąga się przed obiektywem jak nieskończone płótno. Każdy zachód słońca maluje inny obraz — od głębokiej ochry po fioletowe kontury gór Ałtaju. To podróż, która uczy cierpliwości i pokory wobec natury.</p>
+    <a href="#" class="btn-read reveal reveal-delay-3">
+      <span>Czytaj historię</span>
+      <span>→</span>
+    </a>
+  </div>
+</div>
+
+<!-- Destinations -->
+<section class="destinations-section" id="destynacje">
+  <p class="section-label reveal">Odkryj świat</p>
+  <h2 class="section-title reveal reveal-delay-1">Popularne<br><em>destynacje</em></h2>
+  <div class="dest-grid">
+    <div class="dest-card reveal">
+      <img src="https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=700&auto=format&fit=crop" alt="Maroko">
+      <div class="dest-info">
+        <div class="dest-region">Afryka Północna</div>
+        <div class="dest-name">Maroko</div>
+        <div class="dest-count">148 fotografii</div>
+      </div>
+    </div>
+    <div class="dest-card reveal reveal-delay-1">
+      <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=700&auto=format&fit=crop" alt="Japonia">
+      <div class="dest-info">
+        <div class="dest-region">Azja Wschodnia</div>
+        <div class="dest-name">Japonia</div>
+        <div class="dest-count">312 fotografii</div>
+      </div>
+    </div>
+    <div class="dest-card reveal reveal-delay-2">
+      <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=700&auto=format&fit=crop" alt="Islandia">
+      <div class="dest-info">
+        <div class="dest-region">Europa Północna</div>
+        <div class="dest-name">Islandia</div>
+        <div class="dest-count">97 fotografii</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quote -->
+<div class="quote-section">
+  <p class="quote-text">"Fotografia jest sztuką obserwacji. Chodzi o to, by znaleźć coś interesującego w miejscu zwyczajnym."</p>
+  <p class="quote-author">— Elliott Erwitt</p>
+</div>
+
+<!-- Newsletter -->
+<section class="newsletter" id="kontakt">
+  <div>
+    <p class="section-label reveal">Bądź na bieżąco</p>
+    <h2 class="newsletter-title reveal reveal-delay-1">Dołącz do<br><em>społeczności</em><br>podróżników</h2>
+    <p class="newsletter-body reveal reveal-delay-2">Otrzymuj nowe relacje z podróży, porady fotograficzne i kulisy sesji — prosto na Twoją skrzynkę.</p>
+  </div>
+  <div class="reveal reveal-delay-1">
+    <div class="newsletter-form">
+      <input class="newsletter-input" type="email" placeholder="Twój adres e-mail">
+      <button class="newsletter-btn">Zapisz się</button>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-brand">
+    <div class="footer-logo"><span>WANDER</span>LENS</div>
+    <p class="footer-desc">Dokumentujemy świat jedną klatką na raz. Od Mongolskich stepów po japońskie świątynie — każda podróż to nowa historia.</p>
+  </div>
+  <div>
+    <div class="footer-col-title">Nawigacja</div>
+    <ul class="footer-links">
+      <li><a href="#">Galeria</a></li>
+      <li><a href="#">Historie</a></li>
+      <li><a href="#">Destynacje</a></li>
+      <li><a href="#">O mnie</a></li>
+    </ul>
+  </div>
+  <div>
+    <div class="footer-col-title">Usługi</div>
+    <ul class="footer-links">
+      <li><a href="#">Fotografia ślubna</a></li>
+      <li><a href="#">Warsztaty</a></li>
+      <li><a href="#">Presets Lightroom</a></li>
+      <li><a href="#">Wydruki</a></li>
+    </ul>
+  </div>
+  <div>
+    <div class="footer-col-title">Social media</div>
+    <ul class="footer-links">
+      <li><a href="#">Instagram</a></li>
+      <li><a href="#">YouTube</a></li>
+      <li><a href="#">500px</a></li>
+      <li><a href="#">Behance</a></li>
+    </ul>
+  </div>
+</footer>
+<div class="footer-bottom">
+  <span>© 2026 WanderLens. Wszelkie prawa zastrzeżone.</span>
+  <span><a href="#">Polityka prywatności</a> · <a href="#">Regulamin</a></span>
+</div>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursor.style.transform = `translate(${mouseX - 5}px, ${mouseY - 5}px)`;
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX - 18) * 0.12;
+    ringY += (mouseY - ringY - 18) * 0.12;
+    ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button, input').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform += ' scale(2.5)';
+      ring.style.opacity = '1';
+      ring.style.transform += ' scale(1.5)';
+    });
+    el.addEventListener('mouseleave', () => {
+      ring.style.opacity = '0.5';
+    });
+  });
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+
+  // Smooth nav hide on scroll
+  let lastY = 0;
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    nav.style.opacity = y > lastY && y > 120 ? '0' : '1';
+    nav.style.transition = 'opacity 0.4s';
+    lastY = y;
+  });
+</script>
+</body>
+</html>
